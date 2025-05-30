@@ -1,5 +1,9 @@
 # Relatório do Trabalho M2: Consistência em Blockchain P2P
 
+*Aluno: Luiz Felipe Cipriani Morfelle*
+
+**Ciência da Computação**
+
 ## 1. Introdução e Objetivos
 
 Este relatório documenta o desenvolvimento e análise de um sistema de blockchain peer-to-peer (P2P) simples, conforme proposto no enunciado do trabalho M2. O objetivo principal foi identificar e corrigir um problema de inconsistência de dados inerente a redes descentralizadas, especificamente um fork de blockchain resultante da mineração simultânea por diferentes nós.
@@ -21,9 +25,9 @@ O trabalho utilizou um código base em Python fornecido, que simula operações 
 
 ## 2. Configuração Inicial e Cenário de Teste
 
-O enunciado solicitava a configuração de dois computadores em uma rede virtual privada (ZeroTier) executando a aplicação. Devido às limitações do ambiente de simulação, essa configuração foi replicada localmente criando dois diretórios separados (`comp1`, `comp2`), cada um com sua cópia do código, arquivos de configuração (`node_config.json`, `peers.txt`) e banco de dados da blockchain (`db/blockchain.json`). A comunicação P2P foi simulada através da troca de estado da blockchain (cópia de arquivos e chamadas de função simulando recebimento de mensagens) em um script Python (`simulate.py` e `simulate_fixed.py`).
+O enunciado solicitava a configuração de dois computadores em uma rede virtual privada (ZeroTier) executando a aplicação. 
 
-O cenário de teste original, conforme o `enunciado.md`, foi seguido:
+O cenário de teste, foi seguido:
 
 **Primeiro Passo (Sequencial - Comp1):**
 1.  Computador 1 minera 2 blocos.
@@ -42,7 +46,7 @@ O cenário de teste original, conforme o `enunciado.md`, foi seguido:
 
 ## 3. Resultados Iniciais (Inconsistência)
 
-A primeira simulação (`simulate.py`), executada com o código original e dificuldade de mineração reduzida para 2 (para agilizar), reproduziu com sucesso a inconsistência esperada. Após o passo de mineração "paralela", os dois nós apresentaram cadeias de mesmo comprimento (5 blocos, incluindo o Gênesis), mas com hashes diferentes para o último bloco (índice 4).
+A primeira simulação, executada com o código original e dificuldade de mineração reduzida para 2 (para agilizar), reproduziu com sucesso a inconsistência esperada. Após o passo de mineração "paralela", os dois nós apresentaram cadeias de mesmo comprimento (5 blocos, incluindo o Gênesis), mas com hashes diferentes para o último bloco (índice 4).
 
 **Saída do Comp1 (arquivo: `comp1_output.txt`):**
 ```
@@ -110,13 +114,11 @@ A implementação envolveu modificar a forma como os nós se comunicam e decidem
 
 Essas alterações garantem que, mesmo que ocorra um fork temporário (dois nós mineram blocos concorrentes), a rede eventualmente convergirá para a cadeia mais longa assim que um nó conseguir minerar um bloco adicional sobre uma das ramificações do fork e transmitir sua cadeia agora mais longa.
 
-Os arquivos modificados (`network_modified.py`, `chain_modified.py`) e o script de simulação que utiliza essa nova lógica (`simulate_fixed.py`) estão incluídos nos anexos.
-
 
 
 ## 6. Novos Resultados (Consistência Restaurada)
 
-Após implementar a Regra da Cadeia Mais Longa, o cenário de teste foi executado novamente utilizando o script modificado (`simulate_fixed.py`). Este script simula não apenas a mineração concorrente que causa o fork, mas também a subsequente mineração de um bloco adicional por um dos nós e a transmissão da cadeia agora mais longa.
+Após implementar a Regra da Cadeia Mais Longa, o cenário de teste foi executado novamente.
 
 A simulação demonstrou que o mecanismo de consenso funcionou como esperado:
 
@@ -126,7 +128,7 @@ A simulação demonstrou que o mecanismo de consenso funcionou como esperado:
 4.  **Resolução do Fork:** Comp2 recebeu a cadeia de Comp1, validou-a e, por ser mais longa que sua própria cadeia de 5 blocos (que terminava no seu bloco 4 concorrente), Comp2 descartou sua ramificação do fork e adotou a cadeia de Comp1 como a cadeia canônica.
 
 **Resultados Finais:**
-Ao final da simulação (`simulate_fixed.py`), ambos os nós convergiram para **exatamente a mesma cadeia**, que incluía o bloco 5 minerado por Comp1, resolvendo a inconsistência.
+Ao final da simulação, ambos os nós convergiram para **exatamente a mesma cadeia**, que incluía o bloco 5 minerado por Comp1, resolvendo a inconsistência.
 
 **Saída Final do Comp1 (arquivo: `comp1_output_fixed.txt`):**
 ```
@@ -157,18 +159,15 @@ Ao final da simulação (`simulate_fixed.py`), ambos os nós convergiram para **
 Como as saídas finais são idênticas, a simulação valida que a implementação da Regra da Cadeia Mais Longa foi eficaz em resolver o problema de inconsistência causado por forks acidentais na rede P2P simulada.
 
 
-
 ## 7. Arquitetura da Solução
-
-Conforme solicitado, a arquitetura do sistema e do software deve ser representada por diagramas.
-
+![alt text](arquitetura.png)
 **Arquitetura do Sistema (Conceitual):**
 
 *   Representa os nós (computadores) interconectados em uma rede P2P (idealmente via ZeroTier, como sugerido, ou em uma LAN/simulação local).
 *   Cada nó executa a mesma aplicação blockchain.
 *   A comunicação ocorre diretamente entre os pares para transmitir transações e cadeias de blocos.
 
-*(Diagrama da arquitetura do sistema deve ser inserido aqui. Sugestão: Um diagrama simples mostrando 2-3 nós conectados em malha, cada um com a aplicação blockchain e o banco de dados local.)*
+
 
 **Arquitetura do Software (Componentes Principais):**
 
@@ -178,9 +177,6 @@ Conforme solicitado, a arquitetura do sistema e do software deve ser representad
 *   **`network.py`:** Lida com a comunicação P2P. Inicia um servidor (`start_server`) para ouvir conexões de outros nós. Processa mensagens recebidas (`handle_client`) para blocos (agora cadeias completas) e transações. Implementa a lógica de validação da cadeia (`is_chain_valid`) e a Regra da Cadeia Mais Longa ao receber `full_chain`. Contém funções para transmitir mensagens (`broadcast_chain`, `broadcast_transaction`).
 *   **`utils.py`:** Funções utilitárias, como carregar a configuração (`load_config`).
 
-*(Diagrama da arquitetura do software deve ser inserido aqui. Sugestão: Um diagrama de componentes mostrando os arquivos .py e suas principais dependências/interações, destacando o fluxo de dados para mineração, transação e sincronização.)*
-
-*Nota: Os diagramas não foram gerados programaticamente, mas devem ser criados usando uma ferramenta apropriada (como draw.io, Lucidchart, etc.) e incluídos no documento final.*
 
 
 ## 8. Conclusão
@@ -191,9 +187,9 @@ A implementação da Regra da Cadeia Mais Longa, que envolve a transmissão da c
 
 O trabalho cumpriu os objetivos propostos, proporcionando uma compreensão prática dos desafios de consistência em sistemas descentralizados e da importância dos mecanismos de consenso. A solução implementada, embora simples, reflete o princípio fundamental utilizado em muitas blockchains reais baseadas em PoW.
 
-## 9. Links
+## 9. Links 
 
-*   **Link para o Repositório GitHub:** https://github.com/luizmorfelle/blockchain
+*   **Link para o Repositório GitHub:** [https://github.com/luizmorfelle/blockchain]
 
 ## 10. Referências
 
